@@ -11,10 +11,26 @@ export interface AuthResponse {
   authenticated: boolean
 }
 
+export interface FileInfo {
+  id: string
+  name: string
+  mime_type: string
+  size?: string
+  modified_time?: string
+  web_view_link?: string
+}
+
+export interface IngestResponse {
+  folder_id: string
+  folder_name: string
+  files: FileInfo[]
+  file_count: number
+}
+
 export async function fetchCurrentUser(): Promise<User | null> {
   try {
     const response = await fetch(`${API_URL}/auth/me`, {
-      credentials: 'include', // Important: send cookies
+      credentials: 'include',
     })
     
     if (!response.ok) {
@@ -39,3 +55,20 @@ export function getLoginUrl(): string {
   return `${API_URL}/auth/login`
 }
 
+export async function ingestFolder(folderUrl: string): Promise<IngestResponse> {
+  const response = await fetch(`${API_URL}/drive/ingest`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ folder_url: folderUrl }),
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to ingest folder')
+  }
+  
+  return response.json()
+}

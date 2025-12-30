@@ -180,9 +180,9 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 relative overflow-hidden flex flex-col">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-brand-950" />
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-brand-400/5 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-brand-950 pointer-events-none" />
+      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-brand-400/5 rounded-full blur-3xl pointer-events-none" />
       
       {/* Header */}
       <header className="relative z-10 border-b border-white/10 flex-shrink-0">

@@ -9,6 +9,7 @@ export interface User {
 export interface AuthResponse {
   user: User
   authenticated: boolean
+  access_token?: string
 }
 
 export interface FileInfo {
@@ -27,7 +28,7 @@ export interface IngestResponse {
   file_count: number
 }
 
-export async function fetchCurrentUser(): Promise<User | null> {
+export async function fetchCurrentUser(): Promise<{ user: User; accessToken: string } | null> {
   try {
     const response = await fetch(`${API_URL}/auth/me`, {
       credentials: 'include',
@@ -38,7 +39,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
     }
     
     const data: AuthResponse = await response.json()
-    return data.user
+    return { user: data.user, accessToken: data.access_token || '' }
   } catch {
     return null
   }

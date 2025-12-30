@@ -19,7 +19,7 @@ interface Progress {
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, accessToken, logout } = useAuth()
   const [folderUrl, setFolderUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -130,7 +130,7 @@ export default function DashboardPage() {
   const handleBrowseDrive = async () => {
     try {
       setError(null)
-      const result = await openDrivePicker()
+      const result = await openDrivePicker(accessToken || undefined)
       if (result) {
         await handleIngest(result.folderId)
       }

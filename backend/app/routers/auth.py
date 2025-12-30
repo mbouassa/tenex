@@ -109,6 +109,7 @@ def get_current_user(request: Request):
     return {
         "user": payload["user"],
         "authenticated": True,
+        "access_token": payload["google_tokens"]["access_token"],
     }
 
 

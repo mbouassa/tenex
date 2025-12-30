@@ -84,9 +84,9 @@ export interface PickerResult {
   folderName: string
 }
 
-export async function openDrivePicker(): Promise<PickerResult | null> {
+export async function openDrivePicker(existingToken?: string): Promise<PickerResult | null> {
   await loadPickerApi()
-  const token = await getOAuthToken()
+  const token = existingToken || await getOAuthToken()
   
   return new Promise((resolve) => {
     const view = new window.google.picker.DocsView(window.google.picker.ViewId.FOLDERS)

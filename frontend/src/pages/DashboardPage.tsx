@@ -42,7 +42,7 @@ export default function DashboardPage() {
     
     try {
       const eventSource = new EventSource(
-        `http://localhost:8000/drive/ingest-stream?folder_url=${encodeURIComponent(urlOrId)}`,
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/drive/ingest-stream?folder_url=${encodeURIComponent(urlOrId)}`,
         { withCredentials: true }
       )
 

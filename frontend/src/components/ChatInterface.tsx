@@ -95,7 +95,7 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
     }
 
     try {
-      const response = await fetch('http://localhost:8000/chat/ask', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/chat/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

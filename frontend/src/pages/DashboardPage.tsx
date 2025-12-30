@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { ingestFolder, FileInfo } from '../services/api'
 import { openDrivePicker } from '../services/drivePicker'
 import ChatInterface from '../components/ChatInterface'
+import UserMenu from '../components/UserMenu'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -69,30 +70,9 @@ export default function DashboardPage() {
       <div className="h-screen bg-gray-950 flex flex-col">
         {/* Header */}
         <header className="flex-shrink-0 border-b border-white/10 bg-gray-950">
-          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Tenex" className="h-8 w-auto" />
-            </div>
-
-            {/* User menu */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={user.picture}
-                  alt={user.name}
-                  referrerPolicy="no-referrer"
-                  className="w-8 h-8 rounded-full ring-2 ring-white/10"
-                />
-                <span className="hidden sm:block text-sm text-gray-400">{user.email}</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <img src="/logo.png" alt="Tenex" className="h-10 w-auto" />
+            <UserMenu user={user} onLogout={handleLogout} />
           </div>
         </header>
 
@@ -119,32 +99,8 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="relative z-10 border-b border-white/10 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Tenex" className="h-10 w-auto" />
-          </div>
-
-          {/* User menu */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src={user.picture}
-                alt={user.name}
-                referrerPolicy="no-referrer"
-                className="w-9 h-9 rounded-full ring-2 ring-white/10"
-              />
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-white">{user.name}</p>
-                <p className="text-xs text-gray-400">{user.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+          <img src="/logo.png" alt="Tenex" className="h-10 w-auto" />
+          <UserMenu user={user} onLogout={handleLogout} />
         </div>
       </header>
 

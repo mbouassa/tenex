@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, drive
+from app.routers import auth, drive, chat
 
 app = FastAPI(
     title="Tenex Drive QA",
@@ -22,6 +22,7 @@ app.add_middleware(
 # Register routers
 app.include_router(auth.router)
 app.include_router(drive.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

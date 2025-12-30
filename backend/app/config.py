@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     qdrant_url: str
     qdrant_api_key: str
     
+    # Cohere (for reranking)
+    cohere_api_key: str
+    
     class Config:
         env_file = ".env"
 

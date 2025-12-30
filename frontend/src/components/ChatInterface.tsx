@@ -41,11 +41,25 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
   const [showFiles, setShowFiles] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowFiles(false)
+      }
+    }
+    if (showFiles) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFiles])
 
   // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -127,107 +141,153 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-white/10 bg-gray-950/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-              title="Change folder"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📁</span>
-                <h2 className="text-lg font-semibold text-white">{folderName}</h2>
-              </div>
-              <p className="text-sm text-gray-500">{files.length} files indexed</p>
-            </div>
-          </div>
-          
+      {/* Header - matches main header width */}
+      <div className="flex-shrink-0 bg-gray-950/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-2">
           <button
-            onClick={() => setShowFiles(!showFiles)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-              showFiles ? 'bg-brand-600/20 text-brand-300' : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
+            onClick={onBack}
+            className="p-1.5 -ml-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+            title="Change folder"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>Files</span>
-            <svg 
-              className={`w-4 h-4 transition-transform ${showFiles ? 'rotate-180' : ''}`} 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-        </div>
-
-        {/* Collapsible files panel */}
-        {showFiles && (
-          <div className="border-t border-white/5 bg-gray-900/50">
-            <div className="max-w-4xl mx-auto px-4 py-3">
-              <div className="flex flex-wrap gap-2">
-                {files.map((file) => (
-                  <a
-                    key={file.id}
-                    href={file.web_view_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-sm transition-colors group"
-                  >
-                    <span>{getFileIcon(file.mime_type)}</span>
-                    <span className="text-gray-300 group-hover:text-white truncate max-w-[150px]">
-                      {file.name}
-                    </span>
-                    <svg className="w-3 h-3 text-gray-500 group-hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                ))}
-              </div>
+          
+          <div className="relative flex items-center gap-4" ref={dropdownRef}>
+            {/* Folder icon */}
+            <div className="w-10 h-10 rounded-xl bg-brand-600/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
             </div>
+            
+            {/* Folder name and file count */}
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg font-medium text-white">{folderName}</h2>
+              <span className="text-gray-600">·</span>
+              <button
+                onClick={() => setShowFiles(!showFiles)}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                <span>{files.length} files</span>
+                <svg 
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${showFiles ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Files dropdown */}
+            {showFiles && (
+              <div className="absolute top-full left-0 mt-2 w-72 py-2 rounded-xl bg-gray-900 border border-white/10 shadow-xl shadow-black/50 z-50">
+                <div className="px-3 pb-2 mb-2 border-b border-white/5">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Indexed files</p>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {files.map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.web_view_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors group"
+                    >
+                      <span className="text-lg">{getFileIcon(file.mime_type)}</span>
+                      <span className="flex-1 text-sm text-gray-300 group-hover:text-white truncate">
+                        {file.name}
+                      </span>
+                      <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          {messages.length === 0 ? (
-            /* Empty state */
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-              <div className="w-16 h-16 rounded-2xl bg-brand-600/20 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Ask about your documents</h3>
-              <p className="text-gray-400 max-w-md mb-8">
-                I've analyzed {files.length} file{files.length !== 1 ? 's' : ''} from your folder. 
-                Ask me anything about their contents.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {['What is this folder about?', 'Summarize the main points', 'What are the key dates mentioned?'].map((suggestion) => (
+      {/* Empty state - centered input */}
+      {messages.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="w-full max-w-2xl">
+            {/* Title */}
+            <h2 className="text-2xl font-medium text-white text-center mb-8">
+              What would you like to know?
+            </h2>
+            
+            {/* Centered input */}
+            <div className="relative group mb-6">
+              <div className="absolute -inset-1 bg-gradient-to-r from-brand-600/20 via-brand-500/10 to-brand-600/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+              <form onSubmit={handleSubmit} className="relative">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything about your documents..."
+                  rows={1}
+                  style={{ overflow: input.includes('\n') || (inputRef.current && inputRef.current.scrollHeight > 60) ? 'auto' : 'hidden' }}
+                  className="w-full px-5 py-4 pr-28 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
+                  disabled={isLoading}
+                />
+                <div className="absolute right-3 bottom-3 flex items-center gap-2">
                   <button
-                    key={suggestion}
-                    onClick={() => setInput(suggestion)}
-                    className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+                    type="button"
+                    className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all duration-200"
+                    title="Voice input (coming soon)"
                   >
-                    {suggestion}
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
                   </button>
-                ))}
-              </div>
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading}
+                    className={`p-2.5 rounded-xl transition-all duration-200 ${
+                      input.trim() 
+                        ? 'bg-white text-gray-900 hover:bg-gray-100 hover:scale-105 active:scale-95' 
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
             </div>
-          ) : (
-            /* Messages list */
+
+            {/* Suggestions */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {[
+                { text: 'What is this folder about?', icon: '📁' },
+                { text: 'Summarize the main points', icon: '✨' },
+                { text: 'Key dates and deadlines', icon: '📅' },
+              ].map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  onClick={() => setInput(suggestion.text)}
+                  className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-gray-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.12] transition-all duration-200"
+                >
+                  <span className="text-base opacity-70 group-hover:opacity-100 transition-opacity">{suggestion.icon}</span>
+                  <span>{suggestion.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-6 py-6">
             <div className="space-y-6">
               {messages.map((message) => (
                 <div
@@ -294,39 +354,56 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
               ))}
               <div ref={messagesEndRef} />
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Input area */}
-      <div className="flex-shrink-0 border-t border-white/10 bg-gray-950/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <form onSubmit={handleSubmit} className="relative">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about your documents..."
-              rows={1}
-              className="w-full px-4 py-3 pr-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-600 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </button>
-          </form>
-          <p className="text-xs text-gray-600 text-center mt-2">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+        {/* Input area - bottom */}
+        <div className="flex-shrink-0 pb-6 pt-4">
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-brand-600/20 via-brand-500/10 to-brand-600/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+              <form onSubmit={handleSubmit} className="relative">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything about your documents..."
+                  rows={1}
+                  style={{ overflow: input.includes('\n') || (inputRef.current && inputRef.current.scrollHeight > 60) ? 'auto' : 'hidden' }}
+                  className="w-full px-5 py-4 pr-28 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
+                  disabled={isLoading}
+                />
+                <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all duration-200"
+                    title="Voice input (coming soon)"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading}
+                    className={`p-2.5 rounded-xl transition-all duration-200 ${
+                      input.trim() 
+                        ? 'bg-white text-gray-900 hover:bg-gray-100 hover:scale-105 active:scale-95' 
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

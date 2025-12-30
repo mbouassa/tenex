@@ -1,9 +1,22 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { ingestFolder, FileInfo } from '../services/api'
+import { FileInfo } from '../services/api'
 import { openDrivePicker } from '../services/drivePicker'
 import ChatInterface from '../components/ChatInterface'
 import UserMenu from '../components/UserMenu'
+
+interface FileProgress {
+  name: string
+  status: 'pending' | 'processing' | 'done' | 'error'
+  hasContent?: boolean
+}
+
+interface Progress {
+  status: string
+  currentFile: number
+  totalFiles: number
+  files: FileProgress[]
+}
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -14,6 +27,7 @@ export default function DashboardPage() {
   const [folderId, setFolderId] = useState<string | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [showPasteInput, setShowPasteInput] = useState(false)
+  const [progress, setProgress] = useState<Progress | null>(null)
 
   const handleLogout = async () => {
     await logout()
@@ -24,18 +38,92 @@ export default function DashboardPage() {
     
     setIsLoading(true)
     setError(null)
+    setProgress({ status: 'Connecting...', currentFile: 0, totalFiles: 0, files: [] })
     
     try {
-      const result = await ingestFolder(urlOrId)
-      setFolderId(result.folder_id)
-      setFolderName(result.folder_name)
-      setFiles(result.files)
-      setFolderUrl('')
-      setShowPasteInput(false)
+      const eventSource = new EventSource(
+        `http://localhost:8000/drive/ingest-stream?folder_url=${encodeURIComponent(urlOrId)}`,
+        { withCredentials: true }
+      )
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        
+        switch (data.type) {
+          case 'status':
+            setProgress(prev => prev ? { ...prev, status: data.message } : null)
+            break
+            
+          case 'start':
+            setProgress({
+              status: `Processing ${data.total_files} files...`,
+              currentFile: 0,
+              totalFiles: data.total_files,
+              files: [],
+            })
+            break
+            
+          case 'file_start':
+            setProgress(prev => {
+              if (!prev) return null
+              const newFiles = [...prev.files]
+              newFiles.push({ name: data.file_name, status: 'processing' })
+              return {
+                ...prev,
+                status: `Processing ${data.file_name}...`,
+                currentFile: data.current,
+                files: newFiles,
+              }
+            })
+            break
+            
+          case 'file_done':
+            setProgress(prev => {
+              if (!prev) return null
+              const newFiles = prev.files.map(f => 
+                f.name === data.file_name 
+                  ? { ...f, status: 'done' as const, hasContent: data.has_content }
+                  : f
+              )
+              return {
+                ...prev,
+                status: `Processed ${data.current} of ${data.total} files`,
+                files: newFiles,
+              }
+            })
+            break
+            
+          case 'complete':
+            eventSource.close()
+            setFolderId(data.folder_id)
+            setFolderName(data.folder_name)
+            setFiles(data.files)
+            setFolderUrl('')
+            setShowPasteInput(false)
+            setIsLoading(false)
+            setProgress(null)
+            break
+            
+          case 'error':
+            eventSource.close()
+            setError(data.message)
+            setIsLoading(false)
+            setProgress(null)
+            break
+        }
+      }
+
+      eventSource.onerror = () => {
+        eventSource.close()
+        setError('Connection lost. Please try again.')
+        setIsLoading(false)
+        setProgress(null)
+      }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load folder')
-    } finally {
       setIsLoading(false)
+      setProgress(null)
     }
   }
 
@@ -200,13 +288,64 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Loading overlay */}
-        {isLoading && (
-          <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-white font-medium">Analyzing your documents...</p>
-              <p className="text-gray-400 text-sm">This may take a moment</p>
+        {/* Loading overlay with file progress */}
+        {isLoading && progress && (
+          <div className="fixed inset-0 bg-gray-950/90 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="w-full max-w-md mx-6">
+              <div className="p-8 rounded-2xl bg-gray-900 border border-white/10">
+                {/* Status */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-medium">{progress.status}</p>
+                    {progress.totalFiles > 0 && (
+                      <p className="text-gray-400 text-sm">
+                        {progress.currentFile} of {progress.totalFiles} files
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                {progress.totalFiles > 0 && (
+                  <div className="mb-6">
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-brand-500 transition-all duration-300 ease-out"
+                        style={{ width: `${(progress.currentFile / progress.totalFiles) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* File list */}
+                {progress.files.length > 0 && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {progress.files.map((file, i) => (
+                      <div 
+                        key={i}
+                        className="flex items-center gap-3 text-sm"
+                      >
+                        {file.status === 'processing' ? (
+                          <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                        ) : file.status === 'done' ? (
+                          <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border border-gray-600" />
+                        )}
+                        <span className={file.status === 'done' ? 'text-gray-400' : 'text-white'}>
+                          {file.name}
+                        </span>
+                        {file.status === 'done' && !file.hasContent && (
+                          <span className="text-xs text-gray-500">(no text)</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

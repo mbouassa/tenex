@@ -234,19 +234,10 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
                   placeholder="Ask anything about your documents..."
                   rows={1}
                   style={{ overflow: input.includes('\n') || (inputRef.current && inputRef.current.scrollHeight > 60) ? 'auto' : 'hidden' }}
-                  className="w-full px-5 py-4 pr-28 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
+                  className="w-full px-5 py-4 pr-16 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
                   disabled={isLoading}
                 />
-                <div className="absolute right-3 bottom-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all duration-200"
-                    title="Voice input (coming soon)"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  </button>
+                <div className="absolute right-3 bottom-3">
                   <button
                     type="submit"
                     disabled={!input.trim() || isLoading}
@@ -371,19 +362,10 @@ export default function ChatInterface({ folderName, folderId, files, onBack }: C
                   placeholder="Ask anything about your documents..."
                   rows={1}
                   style={{ overflow: input.includes('\n') || (inputRef.current && inputRef.current.scrollHeight > 60) ? 'auto' : 'hidden' }}
-                  className="w-full px-5 py-4 pr-28 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
+                  className="w-full px-5 py-4 pr-16 max-h-40 rounded-2xl bg-gray-900/80 border border-white/[0.08] text-white placeholder-gray-500 resize-none focus:outline-none focus:border-white/20 transition-all duration-200"
                   disabled={isLoading}
                 />
-                <div className="absolute right-3 bottom-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all duration-200"
-                    title="Voice input (coming soon)"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  </button>
+                <div className="absolute right-3 bottom-3">
                   <button
                     type="submit"
                     disabled={!input.trim() || isLoading}

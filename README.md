@@ -2,7 +2,7 @@
 
 An intelligent document assistant that lets you ask questions about your Google Drive folders using RAG (Retrieval Augmented Generation).
 
-![Tenex Demo](./demo-screenshot.png)
+Video: https://youtu.be/Mfn7FwrPRR0
 
 ## Features
 

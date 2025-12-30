@@ -185,7 +185,7 @@ export default function DashboardPage() {
       <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-brand-400/5 rounded-full blur-3xl pointer-events-none" />
       
       {/* Header */}
-      <header className="relative z-10 border-b border-white/10 flex-shrink-0">
+      <header className="relative z-20 border-b border-white/10 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <img src="/logo.png" alt="Tenex" className="h-10 w-auto" />
           <UserMenu user={user} onLogout={handleLogout} />

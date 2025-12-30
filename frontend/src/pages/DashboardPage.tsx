@@ -80,13 +80,14 @@ export default function DashboardPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+    <div className="min-h-screen bg-gray-950 relative overflow-hidden flex flex-col">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-brand-950" />
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-brand-400/5 rounded-full blur-3xl" />
       
       {/* Header */}
-      <header className="relative z-10 border-b border-white/10">
+      <header className="relative z-10 border-b border-white/10 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -118,24 +119,27 @@ export default function DashboardPage() {
       </header>
 
       {/* Main content */}
-      <main className="relative z-10 max-w-4xl mx-auto px-6 py-16">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6">
         {/* Show folder selector if no folder loaded */}
         {files.length === 0 ? (
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-              Select a folder to analyze
-            </h1>
-            <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto">
-              Choose a Google Drive folder and start asking questions about your documents.
-            </p>
+          <div className="w-full max-w-md">
+            {/* Glass card container */}
+            <div className="p-8 sm:p-10 rounded-3xl glass">
+              {/* Header */}
+              <div className="text-center mb-10">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                  Select a folder
+                </h1>
+                <p className="text-gray-400 leading-relaxed">
+                  Choose a Google Drive folder and start asking questions about your documents.
+                </p>
+              </div>
 
-            {/* Folder selection card */}
-            <div className="max-w-lg mx-auto">
               {/* Primary: Browse Drive button */}
               <button
                 onClick={handleBrowseDrive}
                 disabled={isLoading}
-                className="w-full group relative flex items-center justify-center gap-3 px-8 py-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-semibold text-lg shadow-2xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="btn-primary-glow w-full group flex items-center justify-center gap-3 px-8 py-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-semibold text-lg hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -152,7 +156,7 @@ export default function DashboardPage() {
               </button>
 
               {/* Divider */}
-              <div className="flex items-center gap-4 my-6">
+              <div className="flex items-center gap-4 my-8">
                 <div className="flex-1 h-px bg-white/10" />
                 <span className="text-sm text-gray-500">or paste a link</span>
                 <div className="flex-1 h-px bg-white/10" />
@@ -162,7 +166,7 @@ export default function DashboardPage() {
               {!showPasteInput ? (
                 <button
                   onClick={() => setShowPasteInput(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl glass text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -170,14 +174,14 @@ export default function DashboardPage() {
                   <span>Paste a folder link instead</span>
                 </button>
               ) : (
-                <form onSubmit={handlePasteSubmit} className="space-y-3">
+                <form onSubmit={handlePasteSubmit} className="space-y-4">
                   <div className="relative">
                     <input
                       type="text"
                       value={folderUrl}
                       onChange={(e) => setFolderUrl(e.target.value)}
                       placeholder="https://drive.google.com/drive/folders/..."
-                      className="w-full px-5 py-4 rounded-xl glass text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all"
+                      className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all"
                       autoFocus
                     />
                   </div>
@@ -213,7 +217,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           /* Show files list when folder is loaded */
-          <div>
+          <div className="w-full max-w-3xl py-12">
             {/* Folder header */}
             <div className="flex items-center justify-between mb-8">
               <div>

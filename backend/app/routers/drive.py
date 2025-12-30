@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -9,6 +9,8 @@ from app.services.google_drive import (
     list_folder_files,
     get_folder_info,
 )
+from app.services.document_processor import process_file
+from app.services.chunker import process_files_to_chunks
 
 router = APIRouter(prefix="/drive", tags=["Google Drive"])
 
@@ -24,6 +26,20 @@ class FileInfo(BaseModel):
     size: Optional[str] = None
     modified_time: Optional[str] = None
     web_view_link: Optional[str] = None
+    has_content: Optional[bool] = None
+
+
+class ChunkMetadata(BaseModel):
+    file_id: str
+    file_name: str
+    chunk_index: int
+    total_chunks: int
+    web_view_link: Optional[str] = None
+
+
+class Chunk(BaseModel):
+    text: str
+    metadata: ChunkMetadata
 
 
 class IngestResponse(BaseModel):
@@ -31,18 +47,21 @@ class IngestResponse(BaseModel):
     folder_name: str
     files: List[FileInfo]
     file_count: int
+    chunks: List[Chunk]
+    chunk_count: int
+    processed_file_count: int
 
 
 @router.post("/ingest", response_model=IngestResponse)
 def ingest_folder(body: IngestRequest, request: Request):
-    """Ingest a Google Drive folder - parse URL and list all files.
+    """Ingest a Google Drive folder - download files, extract text, create chunks.
     
     Args:
         body: Contains folder_url (URL or folder ID)
         request: FastAPI request object for accessing cookies
         
     Returns:
-        Folder info and list of files
+        Folder info, files, and text chunks ready for embedding
     """
     # Get user's Google tokens from session
     google_tokens = get_google_tokens(request)
@@ -62,6 +81,21 @@ def ingest_folder(body: IngestRequest, request: Request):
         # List all files in the folder
         files = list_folder_files(google_tokens, folder_id)
         
+        # Process each file (download and extract text)
+        processed_files = []
+        for f in files:
+            file_info = {
+                'id': f['id'],
+                'name': f['name'],
+                'mime_type': f['mimeType'],
+                'web_view_link': f.get('webViewLink'),
+            }
+            processed = process_file(google_tokens, file_info)
+            processed_files.append(processed)
+        
+        # Create chunks from all processed files
+        chunks = process_files_to_chunks(processed_files)
+        
         # Transform to response format
         file_list = [
             FileInfo(
@@ -71,15 +105,32 @@ def ingest_folder(body: IngestRequest, request: Request):
                 size=f.get("size"),
                 modified_time=f.get("modifiedTime"),
                 web_view_link=f.get("webViewLink"),
+                has_content=next(
+                    (p['has_content'] for p in processed_files if p['file_id'] == f['id']),
+                    False
+                ),
             )
             for f in files
         ]
+        
+        chunk_list = [
+            Chunk(
+                text=c['text'],
+                metadata=ChunkMetadata(**c['metadata'])
+            )
+            for c in chunks
+        ]
+        
+        processed_count = sum(1 for p in processed_files if p.get('has_content'))
         
         return IngestResponse(
             folder_id=folder_id,
             folder_name=folder_info.get("name", "Unknown"),
             files=file_list,
             file_count=len(file_list),
+            chunks=chunk_list,
+            chunk_count=len(chunk_list),
+            processed_file_count=processed_count,
         )
         
     except Exception as e:
@@ -100,4 +151,3 @@ def ingest_folder(body: IngestRequest, request: Request):
                 status_code=500,
                 detail=f"Error accessing Google Drive: {error_msg}"
             )
-

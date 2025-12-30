@@ -167,6 +167,4 @@ Chunk-level citations are confusing for users. Grouping by document and only sho
 - **Backend**: Railway
 - **Vector DB**: Qdrant Cloud
 
-## License
 
-MIT

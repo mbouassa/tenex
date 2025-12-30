@@ -2,31 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { ingestFolder, FileInfo } from '../services/api'
 import { openDrivePicker } from '../services/drivePicker'
-
-// File type icons
-function getFileIcon(mimeType: string): string {
-  if (mimeType.includes('document')) return '📄'
-  if (mimeType.includes('spreadsheet')) return '📊'
-  if (mimeType.includes('presentation')) return '📽️'
-  if (mimeType.includes('pdf')) return '📕'
-  if (mimeType.includes('image')) return '🖼️'
-  if (mimeType.includes('video')) return '🎬'
-  if (mimeType.includes('audio')) return '🎵'
-  if (mimeType.includes('folder')) return '📁'
-  return '📄'
-}
-
-function getFileTypeName(mimeType: string): string {
-  if (mimeType.includes('document')) return 'Document'
-  if (mimeType.includes('spreadsheet')) return 'Spreadsheet'
-  if (mimeType.includes('presentation')) return 'Presentation'
-  if (mimeType.includes('pdf')) return 'PDF'
-  if (mimeType.includes('image')) return 'Image'
-  if (mimeType.includes('video')) return 'Video'
-  if (mimeType.includes('audio')) return 'Audio'
-  if (mimeType.includes('folder')) return 'Folder'
-  return 'File'
-}
+import ChatInterface from '../components/ChatInterface'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -34,6 +10,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [folderName, setFolderName] = useState<string | null>(null)
+  const [folderId, setFolderId] = useState<string | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [showPasteInput, setShowPasteInput] = useState(false)
 
@@ -49,6 +26,7 @@ export default function DashboardPage() {
     
     try {
       const result = await ingestFolder(urlOrId)
+      setFolderId(result.folder_id)
       setFolderName(result.folder_name)
       setFiles(result.files)
       setFolderUrl('')
@@ -77,7 +55,59 @@ export default function DashboardPage() {
     handleIngest(folderUrl)
   }
 
+  const handleBack = () => {
+    setFiles([])
+    setFolderName(null)
+    setFolderId(null)
+  }
+
   if (!user) return null
+
+  // Show chat interface when folder is loaded
+  if (files.length > 0 && folderId && folderName) {
+    return (
+      <div className="h-screen bg-gray-950 flex flex-col">
+        {/* Header */}
+        <header className="flex-shrink-0 border-b border-white/10 bg-gray-950">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Tenex" className="h-8 w-auto" />
+            </div>
+
+            {/* User menu */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  referrerPolicy="no-referrer"
+                  className="w-8 h-8 rounded-full ring-2 ring-white/10"
+                />
+                <span className="hidden sm:block text-sm text-gray-400">{user.email}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Chat interface */}
+        <div className="flex-1 overflow-hidden">
+          <ChatInterface
+            folderName={folderName}
+            folderId={folderId}
+            files={files}
+            onBack={handleBack}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 relative overflow-hidden flex flex-col">
@@ -118,170 +148,109 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main content - folder selector */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-6">
-        {/* Show folder selector if no folder loaded */}
-        {files.length === 0 ? (
-          <div className="w-full max-w-md">
-            {/* Glass card container */}
-            <div className="p-8 sm:p-10 rounded-3xl glass">
-              {/* Header */}
-              <div className="text-center mb-10">
-                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                  Select a folder
-                </h1>
-                <p className="text-gray-400 leading-relaxed">
-                  Choose a Google Drive folder and start asking questions about your documents.
-                </p>
-              </div>
-
-              {/* Primary: Browse Drive button */}
-              <button
-                onClick={handleBrowseDrive}
-                disabled={isLoading}
-                className="btn-primary-glow w-full group flex items-center justify-center gap-3 px-8 py-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-semibold text-lg hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-                <span>Browse Google Drive</span>
-                <svg 
-                  className="w-5 h-5 text-brand-200 group-hover:translate-x-1 transition-transform" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-
-              {/* Divider */}
-              <div className="flex items-center gap-4 my-8">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-sm text-gray-500">or paste a link</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {/* Secondary: Paste link */}
-              {!showPasteInput ? (
-                <button
-                  onClick={() => setShowPasteInput(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  <span>Paste a folder link instead</span>
-                </button>
-              ) : (
-                <form onSubmit={handlePasteSubmit} className="space-y-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={folderUrl}
-                      onChange={(e) => setFolderUrl(e.target.value)}
-                      placeholder="https://drive.google.com/drive/folders/..."
-                      className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowPasteInput(false)
-                        setFolderUrl('')
-                      }}
-                      className="flex-1 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!folderUrl.trim() || isLoading}
-                      className="flex-1 px-4 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {isLoading ? 'Loading...' : 'Analyze'}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Error message */}
-              {error && (
-                <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                  <p className="text-red-400 text-sm">{error}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Show files list when folder is loaded */
-          <div className="w-full max-w-3xl py-12">
-            {/* Folder header */}
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-3xl">📁</span>
-                  <h1 className="text-3xl font-bold text-white">{folderName}</h1>
-                </div>
-                <p className="text-gray-400">{files.length} files found</p>
-              </div>
-              <button
-                onClick={() => {
-                  setFiles([])
-                  setFolderName(null)
-                }}
-                className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                Change folder
-              </button>
-            </div>
-
-            {/* Files grid */}
-            <div className="grid gap-3">
-              {files.map((file) => (
-                <a
-                  key={file.id}
-                  href={file.web_view_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-4 p-4 rounded-xl glass hover:bg-white/10 transition-all"
-                >
-                  <span className="text-2xl">{getFileIcon(file.mime_type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate group-hover:text-brand-300 transition-colors">
-                      {file.name}
-                    </p>
-                    <p className="text-sm text-gray-500">{getFileTypeName(file.mime_type)}</p>
-                  </div>
-                  <svg 
-                    className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              ))}
-            </div>
-
-            {/* Next step placeholder */}
-            <div className="mt-12 p-6 rounded-2xl glass text-center">
-              <p className="text-gray-400">
-                🚧 Chat interface coming next — you'll be able to ask questions about these files
+        <div className="w-full max-w-md">
+          {/* Glass card container */}
+          <div className="p-8 sm:p-10 rounded-3xl glass">
+            {/* Header */}
+            <div className="text-center mb-10">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Select a folder
+              </h1>
+              <p className="text-gray-400 leading-relaxed">
+                Choose a Google Drive folder and start asking questions about your documents.
               </p>
             </div>
+
+            {/* Primary: Browse Drive button */}
+            <button
+              onClick={handleBrowseDrive}
+              disabled={isLoading}
+              className="btn-primary-glow w-full group flex items-center justify-center gap-3 px-8 py-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-semibold text-lg hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span>Browse Google Drive</span>
+              <svg 
+                className="w-5 h-5 text-brand-200 group-hover:translate-x-1 transition-transform" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-sm text-gray-500">or paste a link</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {/* Secondary: Paste link */}
+            {!showPasteInput ? (
+              <button
+                onClick={() => setShowPasteInput(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span>Paste a folder link instead</span>
+              </button>
+            ) : (
+              <form onSubmit={handlePasteSubmit} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={folderUrl}
+                    onChange={(e) => setFolderUrl(e.target.value)}
+                    placeholder="https://drive.google.com/drive/folders/..."
+                    className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasteInput(false)
+                      setFolderUrl('')
+                    }}
+                    className="flex-1 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!folderUrl.trim() || isLoading}
+                    className="flex-1 px-4 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? 'Loading...' : 'Analyze'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Loading overlay */}
         {isLoading && (
           <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-white font-medium">Loading folder contents...</p>
+              <p className="text-white font-medium">Analyzing your documents...</p>
+              <p className="text-gray-400 text-sm">This may take a moment</p>
             </div>
           </div>
         )}

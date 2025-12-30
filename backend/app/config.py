@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     # Session security (generate a random string for production)
     secret_key: str = "change-this-in-production-use-a-random-string"
     
+    # OpenAI
+    openai_api_key: str
+    
+    # Qdrant
+    qdrant_url: str
+    qdrant_api_key: str
+    
     class Config:
         env_file = ".env"
 

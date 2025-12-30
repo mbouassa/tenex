@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -11,6 +11,7 @@ from app.services.google_drive import (
 )
 from app.services.document_processor import process_file
 from app.services.chunker import process_files_to_chunks
+from app.services.vector_store import store_chunks
 
 router = APIRouter(prefix="/drive", tags=["Google Drive"])
 
@@ -47,21 +48,21 @@ class IngestResponse(BaseModel):
     folder_name: str
     files: List[FileInfo]
     file_count: int
-    chunks: List[Chunk]
     chunk_count: int
     processed_file_count: int
+    embedded: bool  # Whether chunks were stored in vector DB
 
 
 @router.post("/ingest", response_model=IngestResponse)
 def ingest_folder(body: IngestRequest, request: Request):
-    """Ingest a Google Drive folder - download files, extract text, create chunks.
+    """Ingest a Google Drive folder - download files, extract text, embed and store.
     
     Args:
         body: Contains folder_url (URL or folder ID)
         request: FastAPI request object for accessing cookies
         
     Returns:
-        Folder info, files, and text chunks ready for embedding
+        Folder info, files, and embedding status
     """
     # Get user's Google tokens from session
     google_tokens = get_google_tokens(request)
@@ -96,6 +97,9 @@ def ingest_folder(body: IngestRequest, request: Request):
         # Create chunks from all processed files
         chunks = process_files_to_chunks(processed_files)
         
+        # Store chunks in Qdrant with embeddings
+        stored_count = store_chunks(folder_id, chunks)
+        
         # Transform to response format
         file_list = [
             FileInfo(
@@ -113,14 +117,6 @@ def ingest_folder(body: IngestRequest, request: Request):
             for f in files
         ]
         
-        chunk_list = [
-            Chunk(
-                text=c['text'],
-                metadata=ChunkMetadata(**c['metadata'])
-            )
-            for c in chunks
-        ]
-        
         processed_count = sum(1 for p in processed_files if p.get('has_content'))
         
         return IngestResponse(
@@ -128,9 +124,9 @@ def ingest_folder(body: IngestRequest, request: Request):
             folder_name=folder_info.get("name", "Unknown"),
             files=file_list,
             file_count=len(file_list),
-            chunks=chunk_list,
-            chunk_count=len(chunk_list),
+            chunk_count=stored_count,
             processed_file_count=processed_count,
+            embedded=stored_count > 0,
         )
         
     except Exception as e:

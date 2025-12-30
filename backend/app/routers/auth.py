@@ -46,7 +46,16 @@ def login():
     authorization_url, state = get_authorization_url()
     response = RedirectResponse(url=authorization_url)
     # Store state in cookie to verify callback (prevents CSRF)
-    response.set_cookie(key="oauth_state", value=state, httponly=True, max_age=600)
+    # Use secure cookies for production
+    is_production = "localhost" not in settings.frontend_url
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=is_production,
+        samesite="none" if is_production else "lax",
+        max_age=600,
+    )
     return response
 
 
@@ -69,12 +78,15 @@ def callback(code: str, state: str, request: Request):
     
     # Redirect to frontend with session cookie
     response = RedirectResponse(url=settings.frontend_url)
+    
+    # Use secure cookies for production (cross-domain requires SameSite=None + Secure)
+    is_production = "localhost" not in settings.frontend_url
     response.set_cookie(
         key=COOKIE_NAME,
         value=session_token,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
+        secure=is_production,
+        samesite="none" if is_production else "lax",
         max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
     # Clear the oauth_state cookie

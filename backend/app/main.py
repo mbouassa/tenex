@@ -29,3 +29,12 @@ app.include_router(chat.router)
 def health_check():
     """Health check endpoint to verify the server is running."""
     return {"status": "ok"}
+
+
+@app.get("/debug/settings")
+def debug_settings():
+    """Debug endpoint to check current settings (remove in production)."""
+    return {
+        "frontend_url": settings.frontend_url,
+        "backend_url": settings.backend_url,
+    }
